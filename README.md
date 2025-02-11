@@ -2,6 +2,8 @@
 ## FitSense, android application.
 ## CIS 4330 Final Project - Group 5
 
+## Project Proposal: Temple Access Only
+- https://docs.google.com/document/d/10FGvHeAiqW4ficlbAtG_lAb6SBeseZjMOKMQt1LJM18/edit?usp=sharing
 
 [//]: # ( readme: collaborators -start )
 <table>
