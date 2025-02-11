@@ -8,7 +8,7 @@
 <tr>
     <td align="center">
         <a href="https://github.com/tt50">
-            <img src="" width="100" height="120" alt=""/>
+            <img src="https://avatars.githubusercontent.com/u/156944954?v=4&size=64" width="100" height="120" alt="Tiffany"/>
             <br />
             <sub><b>Tiffany Truong</b></sub>
         </a>
