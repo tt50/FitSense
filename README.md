@@ -1,6 +1,6 @@
 #  CIS 4330 Final Project - Group 5 
 ## FitSense
-- FitSense an exercise detection andriod application that can classify different types of exercises.
+- FitSense an exercise detection android application that can classify different types of exercises.
 
 ## Project Proposal: Temple Access Only
 - https://docs.google.com/document/d/10FGvHeAiqW4ficlbAtG_lAb6SBeseZjMOKMQt1LJM18/edit?usp=sharing
@@ -39,7 +39,7 @@
 
 ### Clone the github repo
 
-### Open the project
+## Open the project and run
 ### Open the fitsenseapp folder
 - `cd fitsenseapp`
 
