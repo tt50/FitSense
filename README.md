@@ -28,29 +28,29 @@
 
 ## Project Setup
 ### Android Studio
-`https://developer.android.com/studio`
+- `https://developer.android.com/studio`
 
 ### Install on your own system's terminal
-`brew install node`
-`brew install openjdk@11`
-`brew install android-platform-tools`
-`brew install watchman`: For macOS devices only
-`npm install -g react-native-cli`
+- `brew install node`
+- `brew install openjdk@11`
+- `brew install android-platform-tools`
+- `brew install watchman`: For macOS devices only
+- `npm install -g react-native-cli`
 
 ### Clone the github repo
 
 ### Open the project
 ### Open the fitsenseapp folder
-`cd fitsenseapp`
+- `cd fitsenseapp`
 
 Install dependencies:
-`npm install`
+- `npm install`
 
 Running metro bundler:
-`npx react-native start`
-`npx react-native start --reset-cache` if needed
+- `npx react-native start`
+- `npx react-native start --reset-cache` if needed
 
 Open another terminal that is on fitsenseapp:
 Rebuilding app:
-`npx react-native run-android`
+- `npx react-native run-android`
 
