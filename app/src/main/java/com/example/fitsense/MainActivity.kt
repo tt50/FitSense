@@ -1,14 +1,14 @@
 package com.example.fitsense
 
+import RunningWalkingDetector
 import android.os.Bundle
 import android.os.Handler
 import android.widget.TextView
 import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-
+import android.hardware.Sensor
+import android.hardware.SensorManager
 class MainActivity : AppCompatActivity() {
 
     // Timer
@@ -18,9 +18,11 @@ class MainActivity : AppCompatActivity() {
     private var elapsedTime: Long = 0
     private val handler = Handler()
 
-    // Accelerometer
-    private lateinit var tracker: Accelerometer
+    //  RunningWalkingDetector with acceleromter and steps
+    private lateinit var runningWalkingDetector: RunningWalkingDetector
+    private lateinit var stepCounterLabel: TextView
     private lateinit var accelerationLabel: TextView
+    private lateinit var activityExerciseLabel: TextView
 
     // Timer
     private val updateTimerRunnable: Runnable = object : Runnable {
@@ -58,20 +60,22 @@ class MainActivity : AppCompatActivity() {
             stopTimer()
         }
 
-        // set up Accelerometer
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        stepCounterLabel = findViewById(R.id.stepCounter)
         accelerationLabel = findViewById(R.id.currentAcceleration)
+        activityExerciseLabel = findViewById(R.id.activityExercise)
 
-        // initialize accelerometer tracker
-        tracker = Accelerometer(this) { acc ->
-            this@MainActivity.runOnUiThread {
-                accelerationLabel.text = "Current Speed: %.2f m/s²".format(acc)
+            // Initialize the detector
+            runningWalkingDetector = RunningWalkingDetector()
+
+        // Start a loop to update UI every second with the current speed and step count
+        handler.post(object : Runnable {
+            override fun run() {
+                stepCounterLabel.text = "Steps: ${runningWalkingDetector.getStepCount()}"
+                accelerationLabel.text = "Speed: %.2f m/s".format(runningWalkingDetector.getCurrentSpeed())
+                activityExerciseLabel.text = "Activity: ${runningWalkingDetector.getCurrentActivity()}"
+                handler.postDelayed(this, 1000)
             }
-        }
+        })
     }
 
     // start timer and rest time
@@ -91,12 +95,16 @@ class MainActivity : AppCompatActivity() {
     // start accelerometer tracking
     override fun onResume() {
         super.onResume()
-        tracker.startTracking()
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorManager.registerListener(runningWalkingDetector, accelerometer, SensorManager.SENSOR_DELAY_UI)
     }
+
 
     // stop accelerometer tracking
     override fun onPause() {
         super.onPause()
-        tracker.stopTracking()
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        sensorManager.unregisterListener(runningWalkingDetector)
     }
 }
