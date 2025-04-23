@@ -10,7 +10,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import android.hardware.Sensor
 import android.hardware.SensorManager
+
 class MainActivity : AppCompatActivity() {
+
     // Timer
     private lateinit var timerTextView: TextView
     private var isTimerRunning = false
@@ -18,16 +20,16 @@ class MainActivity : AppCompatActivity() {
     private var elapsedTime: Long = 0
     private val handler = Handler()
 
-    //  RunningWalkingDetector with acceleromter and steps
+    // Detectors
     private lateinit var runningWalkingDetector: RunningWalkingDetector
+    private lateinit var barometer: Barometer
+
+    // UI Labels
     private lateinit var stepCounterLabel: TextView
     private lateinit var accelerationLabel: TextView
     private lateinit var activityExerciseLabel: TextView
-    // Sensors
-    private lateinit var barometer: Barometer
-
-    private lateinit var pressureLabel: TextView
     private lateinit var jumpHeightLabel: TextView
+    private lateinit var jumpCountLabel: TextView
 
     private val updateTimerRunnable: Runnable = object : Runnable {
         override fun run() {
@@ -49,45 +51,49 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize views
         timerTextView = findViewById(R.id.txtTimer)
+        stepCounterLabel = findViewById(R.id.stepCounter)
         accelerationLabel = findViewById(R.id.currentAcceleration)
+        activityExerciseLabel = findViewById(R.id.activityExercise)
         jumpHeightLabel = findViewById(R.id.txtJumpHeight)
+        jumpCountLabel = findViewById(R.id.txtJumpCount)
 
-        // Initialize sensors
-        barometer = Barometer(this) { pressure ->
+        // Initialize detectors
+        runningWalkingDetector = RunningWalkingDetector()
+
+        barometer = Barometer(this) {
             runOnUiThread {
-                // Update jump height display continuously
                 jumpHeightLabel.text = "Jump Height: %.2f ft".format(barometer.calculateJumpHeight())
+                jumpCountLabel.text = "Jumps: ${barometer.getJumpCount()}"
             }
         }
 
-        // Button click listeners
         findViewById<Button>(R.id.btnStart).setOnClickListener {
             if (isTimerRunning) {
                 stopTimer()
             } else {
                 resetAndStartTimer()
-                barometer.resetJumpMeasurement() // Reset jump measurement when starting
+                barometer.resetJumpMeasurement()
+                barometer.startTracking()
             }
         }
 
         findViewById<Button>(R.id.btnStop).setOnClickListener {
             stopTimer()
+            barometer.stopTracking()
             checkJumpHeight()
         }
 
-        stepCounterLabel = findViewById(R.id.stepCounter)
-        accelerationLabel = findViewById(R.id.currentAcceleration)
-        activityExerciseLabel = findViewById(R.id.activityExercise)
-
-            // Initialize the detector
-            runningWalkingDetector = RunningWalkingDetector()
-
-        // Start a loop to update UI every second with the current speed and step count
         handler.post(object : Runnable {
             override fun run() {
                 stepCounterLabel.text = "Steps: ${runningWalkingDetector.getStepCount()}"
                 accelerationLabel.text = "Speed: %.2f m/s".format(runningWalkingDetector.getCurrentSpeed())
-                activityExerciseLabel.text = "Activity: ${runningWalkingDetector.getCurrentActivity()}"
+                activityExerciseLabel.text = if (barometer.isJumping()) {
+                    "Activity: Jumping"
+                } else {
+                    "Activity: ${runningWalkingDetector.getCurrentActivity()}"
+                }
+                jumpHeightLabel.text = "Jump Height: %.2f ft".format(barometer.calculateJumpHeight())
+                jumpCountLabel.text = "Jumps: ${barometer.getJumpCount()}"
                 handler.postDelayed(this, 1000)
             }
         })
@@ -98,11 +104,13 @@ class MainActivity : AppCompatActivity() {
         startTime = System.currentTimeMillis()
         isTimerRunning = true
         handler.post(updateTimerRunnable)
+        runningWalkingDetector.startTracking()
     }
 
     private fun stopTimer() {
         isTimerRunning = false
         handler.removeCallbacks(updateTimerRunnable)
+        runningWalkingDetector.stopTracking()
     }
 
     private fun checkJumpHeight() {
@@ -122,12 +130,10 @@ class MainActivity : AppCompatActivity() {
         sensorManager.registerListener(runningWalkingDetector, accelerometer, SensorManager.SENSOR_DELAY_UI)
     }
 
-
-    // stop accelerometer tracking
     override fun onPause() {
         super.onPause()
         val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         sensorManager.unregisterListener(runningWalkingDetector)
-        barometer.startTracking()
+        barometer.stopTracking()
     }
 }

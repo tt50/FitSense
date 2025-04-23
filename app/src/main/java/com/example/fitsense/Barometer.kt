@@ -12,17 +12,22 @@ class Barometer(context: Context, private val callback: (Float) -> Unit) : Senso
     private var maxHeightPressure: Float = 0f
     private var isTracking = false
 
-    // Atmospheric constants
+    private var jumpCount = 0
+    private var isInAir = false
+
     companion object {
-        const val SEA_LEVEL_PRESSURE = 1013.25f // hPa (standard atmospheric pressure)
+        const val SEA_LEVEL_PRESSURE = 1013.25f // hPa
         const val FEET_PER_METER = 3.28084f
-        const val JUMP_THRESHOLD_FEET = 2f
+        const val JUMP_THRESHOLD_FEET = 1.5f //  requirement for jump height
     }
 
     fun startTracking() {
         initialPressure = 0f
         maxHeightPressure = 0f
         isTracking = true
+        isInAir = false
+        jumpCount = 0
+
         sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
@@ -36,36 +41,48 @@ class Barometer(context: Context, private val callback: (Float) -> Unit) : Senso
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_PRESSURE && isTracking) {
             val currentPressure = event.values[0]
-            callback(currentPressure) // Send pressure update to UI
+            callback(currentPressure)
 
             if (initialPressure == 0f) {
                 initialPressure = currentPressure
                 maxHeightPressure = currentPressure
-            } else if (currentPressure < maxHeightPressure) {
+                return
+            }
+
+            if (currentPressure < maxHeightPressure) {
                 maxHeightPressure = currentPressure
+            }
+
+            val jumpHeight = calculateJumpHeight()
+
+            if (jumpHeight > JUMP_THRESHOLD_FEET && !isInAir) {
+                isInAir = true // Jump started
+            } else if (isInAir && currentPressure >= initialPressure - 0.1f) {
+                // Returned to near ground level
+                jumpCount++
+                isInAir = false
+                resetJumpMeasurement()
+                initialPressure = currentPressure // reset base
             }
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
 
-    }
-
-    fun calculateJumpHeight(): Float {
+     fun calculateJumpHeight(): Float {
         if (initialPressure == 0f || maxHeightPressure == 0f) return 0f
 
-        // Subtract initial altitude FROM peak altitude
         val heightMeters = SensorManager.getAltitude(SEA_LEVEL_PRESSURE, maxHeightPressure) -
                 SensorManager.getAltitude(SEA_LEVEL_PRESSURE, initialPressure)
         return heightMeters * FEET_PER_METER
     }
 
-    fun isJumping(): Boolean {
-        return calculateJumpHeight() > JUMP_THRESHOLD_FEET
+    fun resetJumpMeasurement() {
+        maxHeightPressure = initialPressure
     }
 
-    fun resetJumpMeasurement() {
-        initialPressure = 0f
-        maxHeightPressure = 0f
-    }
+    fun getJumpCount(): Int = jumpCount
+
+    fun isJumping(): Boolean = isInAir
+
 }

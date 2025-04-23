@@ -4,7 +4,7 @@ import android.hardware.SensorEventListener
 import kotlin.math.sqrt
 
 class RunningWalkingDetector : SensorEventListener {
-
+    private var isTracking = false
     private var lastStepTime = 0L
     private var previousStepTime = 0L
     private var stepCounter = 0
@@ -16,8 +16,22 @@ class RunningWalkingDetector : SensorEventListener {
     private val idleSpeedThreshold = 0.10; // limit of idle speed in m/s
     private val walkingSpeedThreshold = 0.50 // limit of walking speed in m/s
 
+    fun startTracking(){
+        isTracking = true
+        stepCounter = 0
+        lastSpeed = 0.0
+        currentActivity = "Unknown"
+        lastStepTime = 0L
+        previousStepTime = 0L
+    }
+
+    fun stopTracking(){
+        isTracking = false
+
+    }
+
     override fun onSensorChanged(event: SensorEvent?) {
-        if (event == null) return
+        if (!isTracking || event == null) return
 
         val x = event.values[0]
         val y = event.values[1]
