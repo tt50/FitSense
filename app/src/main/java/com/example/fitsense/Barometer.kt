@@ -31,6 +31,6 @@ class Barometer(
         }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        TODO("Not yet implemented")
+        // not used, so leave it empty
     }
 }

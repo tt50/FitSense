@@ -22,6 +22,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tracker: Accelerometer
     private lateinit var accelerationLabel: TextView
 
+    // Barometer
+    private lateinit var barometer: Barometer
+    private lateinit var pressureLabel: TextView
+
     // Timer
     private val updateTimerRunnable: Runnable = object : Runnable {
         override fun run() {
@@ -72,6 +76,15 @@ class MainActivity : AppCompatActivity() {
                 accelerationLabel.text = "Current Speed: %.2f m/s²".format(acc)
             }
         }
+
+        // setup barometer tracker
+        pressureLabel = findViewById(R.id.txtJumpHeight)
+
+        barometer = Barometer(this) { pressure ->
+            this@MainActivity.runOnUiThread {
+                pressureLabel.text = "Pressure: %.2f hPa".format(pressure)
+            }
+        }
     }
 
     // start timer and rest time
@@ -92,11 +105,14 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         tracker.startTracking()
+        barometer.startTracking()
     }
 
     // stop accelerometer tracking
     override fun onPause() {
         super.onPause()
         tracker.stopTracking()
+        barometer.stopTracking()
     }
 }
+
