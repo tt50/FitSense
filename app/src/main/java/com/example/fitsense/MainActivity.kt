@@ -50,13 +50,11 @@ class MainActivity : AppCompatActivity() {
         // Initialize views
         timerTextView = findViewById(R.id.txtTimer)
         accelerationLabel = findViewById(R.id.currentAcceleration)
-        pressureLabel = findViewById(R.id.txtJumpHeight)
         jumpHeightLabel = findViewById(R.id.txtJumpHeight)
 
         // Initialize sensors
         barometer = Barometer(this) { pressure ->
             runOnUiThread {
-                pressureLabel.text = "Pressure: %.2f hPa".format(pressure)
                 // Update jump height display continuously
                 jumpHeightLabel.text = "Jump Height: %.2f ft".format(barometer.calculateJumpHeight())
             }
