@@ -1,5 +1,6 @@
 package com.example.fitsense
 
+import RunningWalkingDetector
 import android.os.Bundle
 import android.os.Handler
 import android.widget.TextView
@@ -7,9 +8,8 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-
+import android.hardware.Sensor
+import android.hardware.SensorManager
 class MainActivity : AppCompatActivity() {
     // Timer
     private lateinit var timerTextView: TextView
@@ -18,6 +18,11 @@ class MainActivity : AppCompatActivity() {
     private var elapsedTime: Long = 0
     private val handler = Handler()
 
+    //  RunningWalkingDetector with acceleromter and steps
+    private lateinit var runningWalkingDetector: RunningWalkingDetector
+    private lateinit var stepCounterLabel: TextView
+    private lateinit var accelerationLabel: TextView
+    private lateinit var activityExerciseLabel: TextView
     // Sensors
     private lateinit var tracker: Accelerometer
     private lateinit var barometer: Barometer
@@ -79,6 +84,22 @@ class MainActivity : AppCompatActivity() {
             checkJumpHeight()
         }
 
+        stepCounterLabel = findViewById(R.id.stepCounter)
+        accelerationLabel = findViewById(R.id.currentAcceleration)
+        activityExerciseLabel = findViewById(R.id.activityExercise)
+
+            // Initialize the detector
+            runningWalkingDetector = RunningWalkingDetector()
+
+        // Start a loop to update UI every second with the current speed and step count
+        handler.post(object : Runnable {
+            override fun run() {
+                stepCounterLabel.text = "Steps: ${runningWalkingDetector.getStepCount()}"
+                accelerationLabel.text = "Speed: %.2f m/s".format(runningWalkingDetector.getCurrentSpeed())
+                activityExerciseLabel.text = "Activity: ${runningWalkingDetector.getCurrentActivity()}"
+                handler.postDelayed(this, 1000)
+            }
+        })
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -110,6 +131,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorManager.registerListener(runningWalkingDetector, accelerometer, SensorManager.SENSOR_DELAY_UI)
+    }
+
+
+    // stop accelerometer tracking
+    override fun onPause() {
+        super.onPause()
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        sensorManager.unregisterListener(runningWalkingDetector)
         tracker.startTracking()
         barometer.startTracking()
     }
