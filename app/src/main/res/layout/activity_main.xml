@@ -83,4 +83,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txtSpeed" />
 
+    <TextView
+        android:id="@+id/currentAcceleration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="23dp"
+        android:layout_marginTop="8dp"
+        android:text="Current Speed: 0 m/s"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/txtJumpHeight" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
