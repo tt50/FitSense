@@ -4,13 +4,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.widget.TextView
 import android.widget.Button
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
-
     // Timer
     private lateinit var timerTextView: TextView
     private var isTimerRunning = false
@@ -18,15 +18,13 @@ class MainActivity : AppCompatActivity() {
     private var elapsedTime: Long = 0
     private val handler = Handler()
 
-    // Accelerometer
+    // Sensors
     private lateinit var tracker: Accelerometer
-    private lateinit var accelerationLabel: TextView
-
-    // Barometer
     private lateinit var barometer: Barometer
+    private lateinit var accelerationLabel: TextView
     private lateinit var pressureLabel: TextView
+    private lateinit var jumpHeightLabel: TextView
 
-    // Timer
     private val updateTimerRunnable: Runnable = object : Runnable {
         override fun run() {
             if (isTimerRunning) {
@@ -45,49 +43,49 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        // timer label
+        // Initialize views
         timerTextView = findViewById(R.id.txtTimer)
+        accelerationLabel = findViewById(R.id.currentAcceleration)
+        pressureLabel = findViewById(R.id.txtJumpHeight)
+        jumpHeightLabel = findViewById(R.id.txtJumpHeight)
 
-        // record button
+        // Initialize sensors
+        tracker = Accelerometer(this) { acc ->
+            runOnUiThread {
+                accelerationLabel.text = "Current Acceleration: %.2f m/s²".format(acc)
+            }
+        }
+
+        barometer = Barometer(this) { pressure ->
+            runOnUiThread {
+                pressureLabel.text = "Pressure: %.2f hPa".format(pressure)
+                // Update jump height display continuously
+                jumpHeightLabel.text = "Jump Height: %.2f ft".format(barometer.calculateJumpHeight())
+            }
+        }
+
+        // Button click listeners
         findViewById<Button>(R.id.btnStart).setOnClickListener {
             if (isTimerRunning) {
                 stopTimer()
             } else {
                 resetAndStartTimer()
+                barometer.resetJumpMeasurement() // Reset jump measurement when starting
             }
         }
 
-        // stop button
         findViewById<Button>(R.id.btnStop).setOnClickListener {
             stopTimer()
+            checkJumpHeight()
         }
 
-        // set up Accelerometer
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        accelerationLabel = findViewById(R.id.currentAcceleration)
-
-        // initialize accelerometer tracker
-        tracker = Accelerometer(this) { acc ->
-            this@MainActivity.runOnUiThread {
-                accelerationLabel.text = "Current Speed: %.2f m/s²".format(acc)
-            }
-        }
-
-        // setup barometer tracker
-        pressureLabel = findViewById(R.id.txtJumpHeight)
-
-        barometer = Barometer(this) { pressure ->
-            this@MainActivity.runOnUiThread {
-                pressureLabel.text = "Pressure: %.2f hPa".format(pressure)
-            }
-        }
     }
 
-    // start timer and rest time
     private fun resetAndStartTimer() {
         elapsedTime = 0
         startTime = System.currentTimeMillis()
@@ -95,24 +93,30 @@ class MainActivity : AppCompatActivity() {
         handler.post(updateTimerRunnable)
     }
 
-    // stop timer
     private fun stopTimer() {
         isTimerRunning = false
         handler.removeCallbacks(updateTimerRunnable)
     }
 
-    // start accelerometer tracking
+    private fun checkJumpHeight() {
+        val jumpHeight = barometer.calculateJumpHeight()
+        val message = if (barometer.isJumping()) {
+            "Jump height: %.2f ft".format(jumpHeight)
+        } else {
+            "Jump height: %.2f ft (below threshold)".format(jumpHeight)
+        }
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
     override fun onResume() {
         super.onResume()
         tracker.startTracking()
         barometer.startTracking()
     }
 
-    // stop accelerometer tracking
     override fun onPause() {
         super.onPause()
         tracker.stopTracking()
         barometer.stopTracking()
     }
 }
-
