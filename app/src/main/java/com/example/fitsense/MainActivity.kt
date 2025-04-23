@@ -24,9 +24,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var accelerationLabel: TextView
     private lateinit var activityExerciseLabel: TextView
     // Sensors
-    private lateinit var tracker: Accelerometer
     private lateinit var barometer: Barometer
-    private lateinit var accelerationLabel: TextView
+
     private lateinit var pressureLabel: TextView
     private lateinit var jumpHeightLabel: TextView
 
@@ -55,12 +54,6 @@ class MainActivity : AppCompatActivity() {
         jumpHeightLabel = findViewById(R.id.txtJumpHeight)
 
         // Initialize sensors
-        tracker = Accelerometer(this) { acc ->
-            runOnUiThread {
-                accelerationLabel.text = "Current Acceleration: %.2f m/s²".format(acc)
-            }
-        }
-
         barometer = Barometer(this) { pressure ->
             runOnUiThread {
                 pressureLabel.text = "Pressure: %.2f hPa".format(pressure)
@@ -100,11 +93,6 @@ class MainActivity : AppCompatActivity() {
                 handler.postDelayed(this, 1000)
             }
         })
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
     }
 
     private fun resetAndStartTimer() {
@@ -142,13 +130,6 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         sensorManager.unregisterListener(runningWalkingDetector)
-        tracker.startTracking()
         barometer.startTracking()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        tracker.stopTracking()
-        barometer.stopTracking()
     }
 }
