@@ -14,7 +14,7 @@ class RunningWalkingDetector : SensorEventListener {
 
     private var currentActivity = "Unknown"
     private val idleSpeedThreshold = 0.10; // limit of idle speed in m/s
-    private val walkingSpeedThreshold = 0.50 // limit of walking speed in m/s
+    private val walkingSpeedThreshold = 0.49 // limit of walking speed in m/s, this is estimated based on device I tested with
 
     fun startTracking(){
         isTracking = true

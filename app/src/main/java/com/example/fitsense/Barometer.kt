@@ -5,7 +5,6 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-
 class Barometer(context: Context, private val callback: (Float) -> Unit) : SensorEventListener {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private var initialPressure: Float = 0f
@@ -18,7 +17,7 @@ class Barometer(context: Context, private val callback: (Float) -> Unit) : Senso
     companion object {
         const val SEA_LEVEL_PRESSURE = 1013.25f // hPa
         const val FEET_PER_METER = 3.28084f
-        const val JUMP_THRESHOLD_FEET = 0.80f //  requirement for jump height
+        const val JUMP_THRESHOLD_FEET = 0.50f // requirement for jump height, based on device I tested with
     }
 
     fun startTracking() {
@@ -59,17 +58,22 @@ class Barometer(context: Context, private val callback: (Float) -> Unit) : Senso
                 isInAir = true // Jump started
             } else if (isInAir && currentPressure >= initialPressure - 0.1f) {
                 // Returned to near ground level
-                jumpCount++
+                if (jumpHeight > JUMP_THRESHOLD_FEET) {
+                    jumpCount++ // Count only if jump height exceeds the threshold
+                }
                 isInAir = false
                 resetJumpMeasurement()
-                initialPressure = currentPressure // reset base
+                initialPressure = currentPressure // Reset base
             }
+
+            // Update jump height every time a jump occurs
+            callback(jumpHeight)
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
 
-     fun calculateJumpHeight(): Float {
+    fun calculateJumpHeight(): Float {
         if (initialPressure == 0f || maxHeightPressure == 0f) return 0f
 
         val heightMeters = SensorManager.getAltitude(SEA_LEVEL_PRESSURE, maxHeightPressure) -
@@ -84,5 +88,4 @@ class Barometer(context: Context, private val callback: (Float) -> Unit) : Senso
     fun getJumpCount(): Int = jumpCount
 
     fun isJumping(): Boolean = isInAir
-
 }

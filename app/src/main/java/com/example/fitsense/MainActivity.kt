@@ -62,6 +62,7 @@ class MainActivity : AppCompatActivity() {
 
         barometer = Barometer(this) {
             runOnUiThread {
+                // Update the jump height and count continuously
                 jumpHeightLabel.text = "Jump Height: %.2f ft".format(barometer.calculateJumpHeight())
                 jumpCountLabel.text = "Jumps: ${barometer.getJumpCount()}"
             }
@@ -84,15 +85,21 @@ class MainActivity : AppCompatActivity() {
 
         handler.post(object : Runnable {
             override fun run() {
+                // Update step count, speed, and activity
                 stepCounterLabel.text = "Steps: ${runningWalkingDetector.getStepCount()}"
                 accelerationLabel.text = "Speed: %.2f m/s".format(runningWalkingDetector.getCurrentSpeed())
+
+                // Set activity status
                 activityExerciseLabel.text = if (barometer.isJumping()) {
                     "Activity: Jumping"
                 } else {
                     "Activity: ${runningWalkingDetector.getCurrentActivity()}"
                 }
+
+                // Update jump height and count
                 jumpHeightLabel.text = "Jump Height: %.2f ft".format(barometer.calculateJumpHeight())
                 jumpCountLabel.text = "Jumps: ${barometer.getJumpCount()}"
+
                 handler.postDelayed(this, 1000)
             }
         })
