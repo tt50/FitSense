@@ -11,6 +11,10 @@ import androidx.appcompat.app.AppCompatActivity
 import android.hardware.Sensor
 import android.hardware.SensorManager
 
+
+// This application main purpose is to classify three mode of exercise:
+// {walking, running, jumping}. In order to do this, the app uses the accelerometer and barometer sensor.
+// Using these sensors additional features include record timer, tracking number of steps, jump height and number of jumps.
 class MainActivity : AppCompatActivity() {
 
     // Timer

@@ -39,21 +39,26 @@ class Barometer(context: Context, private val callback: (Float) -> Unit) : Senso
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_PRESSURE && isTracking) {
+            // Data extraction: get pressure data
             val currentPressure = event.values[0]
             callback(currentPressure)
 
+            // Preprocessing: set initial pressure
             if (initialPressure == 0f) {
                 initialPressure = currentPressure
                 maxHeightPressure = currentPressure
                 return
             }
 
+            // Preprocessing: calculate max height pressure
             if (currentPressure < maxHeightPressure) {
                 maxHeightPressure = currentPressure
             }
 
+            // Feature extraction: get the jump height to display in label
             val jumpHeight = calculateJumpHeight()
 
+            // Classification: use data to detect a valid jump
             if (jumpHeight > JUMP_THRESHOLD_FEET && !isInAir) {
                 isInAir = true // Jump started
             } else if (isInAir && currentPressure >= initialPressure - 0.1f) {
