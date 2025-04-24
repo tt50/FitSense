@@ -80,7 +80,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnStop).setOnClickListener {
             stopTimer()
             barometer.stopTracking()
-            checkJumpHeight()
         }
 
         handler.post(object : Runnable {
@@ -111,16 +110,6 @@ class MainActivity : AppCompatActivity() {
         isTimerRunning = false
         handler.removeCallbacks(updateTimerRunnable)
         runningWalkingDetector.stopTracking()
-    }
-
-    private fun checkJumpHeight() {
-        val jumpHeight = barometer.calculateJumpHeight()
-        val message = if (barometer.isJumping()) {
-            "Jump height: %.2f ft".format(jumpHeight)
-        } else {
-            "Jump height: %.2f ft (below threshold)".format(jumpHeight)
-        }
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     override fun onResume() {

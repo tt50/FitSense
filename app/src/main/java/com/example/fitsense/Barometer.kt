@@ -18,7 +18,7 @@ class Barometer(context: Context, private val callback: (Float) -> Unit) : Senso
     companion object {
         const val SEA_LEVEL_PRESSURE = 1013.25f // hPa
         const val FEET_PER_METER = 3.28084f
-        const val JUMP_THRESHOLD_FEET = 1.5f //  requirement for jump height
+        const val JUMP_THRESHOLD_FEET = 0.80f //  requirement for jump height
     }
 
     fun startTracking() {
