@@ -1,5 +1,6 @@
 package com.example.fitsense
 
+import RunningWalkingDetector
 import android.os.Bundle
 import android.os.Handler
 import android.widget.TextView
@@ -7,10 +8,11 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import android.hardware.Sensor
+import android.hardware.SensorManager
 
 class MainActivity : AppCompatActivity() {
+
     // Timer
     private lateinit var timerTextView: TextView
     private var isTimerRunning = false
@@ -18,12 +20,16 @@ class MainActivity : AppCompatActivity() {
     private var elapsedTime: Long = 0
     private val handler = Handler()
 
-    // Sensors
-    private lateinit var tracker: Accelerometer
+    // Detectors
+    private lateinit var runningWalkingDetector: RunningWalkingDetector
     private lateinit var barometer: Barometer
+
+    // UI Labels
+    private lateinit var stepCounterLabel: TextView
     private lateinit var accelerationLabel: TextView
-    private lateinit var pressureLabel: TextView
+    private lateinit var activityExerciseLabel: TextView
     private lateinit var jumpHeightLabel: TextView
+    private lateinit var jumpCountLabel: TextView
 
     private val updateTimerRunnable: Runnable = object : Runnable {
         override fun run() {
@@ -45,45 +51,58 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize views
         timerTextView = findViewById(R.id.txtTimer)
+        stepCounterLabel = findViewById(R.id.stepCounter)
         accelerationLabel = findViewById(R.id.currentAcceleration)
-        pressureLabel = findViewById(R.id.txtJumpHeight)
+        activityExerciseLabel = findViewById(R.id.activityExercise)
         jumpHeightLabel = findViewById(R.id.txtJumpHeight)
+        jumpCountLabel = findViewById(R.id.txtJumpCount)
 
-        // Initialize sensors
-        tracker = Accelerometer(this) { acc ->
-            runOnUiThread {
-                accelerationLabel.text = "Current Acceleration: %.2f m/s²".format(acc)
-            }
-        }
+        // Initialize detectors
+        runningWalkingDetector = RunningWalkingDetector()
 
-        barometer = Barometer(this) { pressure ->
+        barometer = Barometer(this) {
             runOnUiThread {
-                pressureLabel.text = "Pressure: %.2f hPa".format(pressure)
-                // Update jump height display continuously
+                // Update the jump height and count continuously
                 jumpHeightLabel.text = "Jump Height: %.2f ft".format(barometer.calculateJumpHeight())
+                jumpCountLabel.text = "Jumps: ${barometer.getJumpCount()}"
             }
         }
 
-        // Button click listeners
         findViewById<Button>(R.id.btnStart).setOnClickListener {
             if (isTimerRunning) {
                 stopTimer()
             } else {
                 resetAndStartTimer()
-                barometer.resetJumpMeasurement() // Reset jump measurement when starting
+                barometer.resetJumpMeasurement()
+                barometer.startTracking()
             }
         }
 
         findViewById<Button>(R.id.btnStop).setOnClickListener {
             stopTimer()
-            checkJumpHeight()
+            barometer.stopTracking()
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        handler.post(object : Runnable {
+            override fun run() {
+                // Update step count, speed, and activity
+                stepCounterLabel.text = "Steps: ${runningWalkingDetector.getStepCount()}"
+                accelerationLabel.text = "Speed: %.2f m/s".format(runningWalkingDetector.getCurrentSpeed())
+
+                // Set activity status
+                activityExerciseLabel.text = if (barometer.isJumping()) {
+                    "Activity: Jumping"
+                } else {
+                    "Activity: ${runningWalkingDetector.getCurrentActivity()}"
+                }
+
+                // Update jump height and count
+                jumpHeightLabel.text = "Jump Height: %.2f ft".format(barometer.calculateJumpHeight())
+                jumpCountLabel.text = "Jumps: ${barometer.getJumpCount()}"
+
+                handler.postDelayed(this, 1000)
+            }
+        })
     }
 
     private fun resetAndStartTimer() {
@@ -91,32 +110,26 @@ class MainActivity : AppCompatActivity() {
         startTime = System.currentTimeMillis()
         isTimerRunning = true
         handler.post(updateTimerRunnable)
+        runningWalkingDetector.startTracking()
     }
 
     private fun stopTimer() {
         isTimerRunning = false
         handler.removeCallbacks(updateTimerRunnable)
-    }
-
-    private fun checkJumpHeight() {
-        val jumpHeight = barometer.calculateJumpHeight()
-        val message = if (barometer.isJumping()) {
-            "Jump height: %.2f ft".format(jumpHeight)
-        } else {
-            "Jump height: %.2f ft (below threshold)".format(jumpHeight)
-        }
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        runningWalkingDetector.stopTracking()
     }
 
     override fun onResume() {
         super.onResume()
-        tracker.startTracking()
-        barometer.startTracking()
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorManager.registerListener(runningWalkingDetector, accelerometer, SensorManager.SENSOR_DELAY_UI)
     }
 
     override fun onPause() {
         super.onPause()
-        tracker.stopTracking()
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        sensorManager.unregisterListener(runningWalkingDetector)
         barometer.stopTracking()
     }
 }
